@@ -24,6 +24,8 @@ pub enum ContractError {
         expected: EscrowState,
         got: EscrowState,
     },
+    #[error("Invalid address")]
+    InvalidAddress {},
 }
 
 impl From<ContractError> for StdError {

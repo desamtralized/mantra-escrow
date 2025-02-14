@@ -36,6 +36,13 @@ fn create_escrow(
         return Err(ContractError::Unauthorized {});
     }
 
+    // validate that both buyer and seller are valid addresses
+    let buyer_addr = deps.api.addr_validate(&escrow.buyer.to_string());
+    let seller_addr = deps.api.addr_validate(&escrow.seller.to_string());
+    if buyer_addr.is_err() || seller_addr.is_err() {
+        return Err(ContractError::InvalidAddress {});
+    }
+
     // generate new escrow id and set state to pending
     let escrow_count: u64 = get_escrow_count(deps.storage).try_into().unwrap();
     let new_escrow_id = escrow_count + 1;

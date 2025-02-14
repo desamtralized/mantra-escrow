@@ -1,6 +1,6 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
-use cosmwasm_std::{DepsMut, Env, MessageInfo, Response};
+use cosmwasm_std::{Deps, DepsMut, Env, MessageInfo, Response};
 // use cw2::set_contract_version;
 
 use crate::error::ContractError;
@@ -22,7 +22,8 @@ pub fn instantiate(
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
     let new_config = msg.config;
-    validate_config(&new_config)?;
+    let imut_deps = deps.as_ref();
+    validate_config(imut_deps, &new_config)?;
     config().save(deps.storage, &new_config)?;
     let res = Response::new().add_attributes(vec![
         ("action", "instantiate"),
@@ -31,20 +32,30 @@ pub fn instantiate(
     Ok(res)
 }
 
-fn validate_config(config: &Config) -> Result<(), ContractError> {
+fn validate_config(deps: Deps, config: &Config) -> Result<(), ContractError> {
+    // check if escrow fee is less than 100%
     if config.escrow_fee > 10000 {
         return Err(ContractError::InvalidConfig {
             msg: "Escrow fee cannot exceed 100%".to_string(),
         });
     }
+    // check if min duration is less than max duration
     if config.max_escrow_duration <= config.min_escrow_duration {
         return Err(ContractError::InvalidConfig {
             msg: "Max duration must be greater than min duration".to_string(),
         });
     }
+    // check if allowed denoms is not empty
     if config.allowed_denoms.is_empty() {
         return Err(ContractError::InvalidConfig {
             msg: "At least one denomination must be allowed".to_string(),
+        });
+    }
+    // check if admin is a valid address
+    let admin_addr = deps.api.addr_validate(&config.admin.to_string());
+    if admin_addr.is_err() {
+        return Err(ContractError::InvalidConfig {
+            msg: "Admin must be a valid address".to_string(),
         });
     }
     Ok(())
