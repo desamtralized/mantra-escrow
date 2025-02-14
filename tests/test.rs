@@ -88,8 +88,6 @@ fn test_create_escrow_and_deposit() {
     let (mut app, seller_addr) = setup_app_with_balances();
     let contract_addr = setup_contract(&mut app).unwrap();
     let buyer_addr = app.api().addr_make("buyer");
-    println!("seller_addr: {}", seller_addr);
-    println!("buyer_addr: {}", buyer_addr);
 
     let condition = get_allowed_denoms()
         .iter()
@@ -114,10 +112,7 @@ fn test_create_escrow_and_deposit() {
             &create_msg,
             &vec![],
         );
-        if response.is_err() {
-            println!("error: {:?}", response.err());
-        }
-        // assert!(response.is_ok());
+        assert!(response.is_ok());
     }
 
     // Test query all escrows
