@@ -1,3 +1,5 @@
+
+
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Addr, Coin, StdError, Storage};
 use cw_storage_plus::{Index, IndexList, IndexedMap, Item, MultiIndex};
@@ -39,16 +41,19 @@ impl<'a> IndexList<Escrow> for EscrowIndices<'a> {
 
 pub fn escrows<'a>() -> IndexedMap<&'a str, Escrow, EscrowIndices<'a>> {
     let indexes = EscrowIndices {
+        id: MultiIndex::new(|_, e| e.id.unwrap_or_default(), "escrows", "escrows__id"),
         seller: MultiIndex::new(|_, e| e.seller.clone(), "escrows", "escrows__seller"),
         buyer: MultiIndex::new(|_, e| e.buyer.clone(), "escrows", "escrows__buyer"),
-        id: MultiIndex::new(|_, e| e.id.unwrap_or_default(), "escrows", "escrows__id"),
     };
     IndexedMap::new("escrows", indexes)
 }
 
 pub fn save_escrow(storage: &mut dyn Storage, escrow: &Escrow) -> Result<(), ContractError> {
+    let id = escrow
+        .id
+        .ok_or_else(|| ContractError::Std(StdError::generic_err("Escrow must have an ID")))?;
     escrows()
-        .save(storage, &escrow.seller.to_string(), escrow)
+        .save(storage, &id.to_string(), escrow)
         .map_err(|_| ContractError::Std(StdError::generic_err("Error saving escrow")))
 }
 
@@ -59,17 +64,8 @@ pub fn get_escrow_count(storage: &dyn cosmwasm_std::Storage) -> usize {
 }
 pub fn get_escrow(storage: &dyn cosmwasm_std::Storage, id: u64) -> Result<Escrow, ContractError> {
     escrows()
-        .idx
-        .id
-        .prefix(id)
-        .range(storage, None, None, cosmwasm_std::Order::Ascending)
-        .next()
-        .map(|res| res.map(|(_, escrow)| escrow))
-        .transpose()
-        .map_err(|e| ContractError::Std(e))?
-        .ok_or(ContractError::Std(StdError::generic_err(
-            "Escrow not found",
-        )))
+        .load(storage, &id.to_string())
+        .map_err(|_| ContractError::Std(StdError::generic_err("Escrow not found")))
 }
 
 pub fn get_all_escrows(storage: &dyn cosmwasm_std::Storage) -> Result<Vec<Escrow>, ContractError> {

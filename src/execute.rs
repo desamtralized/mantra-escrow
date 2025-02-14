@@ -57,20 +57,20 @@ fn create_escrow(
 }
 
 fn deposit(deps: DepsMut, env: Env, info: MessageInfo, id: u64) -> Result<Response, ContractError> {
-    let mut escrow = get_escrow(deps.storage, id)?;
+    let mut escrow = get_escrow(deps.storage, id.into())?;
     if escrow.seller != info.sender {
         return Err(ContractError::Unauthorized {});
     }
-    // check that info.funds() is in escrow.condition
-    for coin in info.funds {
-        if !escrow.condition.contains(&coin) {
-            return Err(ContractError::InvalidFunds {});
-        }
+
+    if info.funds != escrow.condition {
+        return Err(ContractError::InvalidFunds {});
     }
+
     // check that the current block height is less than the timeout
     if env.block.height >= escrow.timeout {
         return Err(ContractError::EscrowTimeout {});
     }
+
     // Check that the escrow is in the pending state
     if escrow.state != Some(EscrowState::Pending) {
         return Err(ContractError::InvalidEscrowState {
@@ -78,6 +78,7 @@ fn deposit(deps: DepsMut, env: Env, info: MessageInfo, id: u64) -> Result<Respon
             got: escrow.state.unwrap(),
         });
     }
+
     // set the escrow state to funded
     escrow.state = Some(EscrowState::Funded);
     save_escrow(deps.storage, &escrow)?;

@@ -1,8 +1,8 @@
 use crate::{
     msg::QueryMsg,
     state::{
-        config, get_all_escrows, get_escrow, get_escrows_by_buyer, get_escrows_by_seller, Config,
-        Escrow,
+        config, get_all_escrows, get_escrow, get_escrow_count, get_escrows_by_buyer,
+        get_escrows_by_seller, Config, Escrow,
     },
 };
 use cosmwasm_std::{entry_point, to_json_binary, Addr, Binary, Deps, Env, StdResult};
@@ -17,6 +17,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         }
         QueryMsg::EscrowsByBuyer { buyer } => to_json_binary(&query_escrows_by_buyer(deps, buyer)?),
         QueryMsg::Escrow { id } => to_json_binary(&query_escrow(deps, id)?),
+        QueryMsg::EscrowCount {} => to_json_binary(&query_escrow_count(deps)?),
     }
 }
 
@@ -26,7 +27,8 @@ fn query_escrow(deps: Deps, id: u64) -> StdResult<Escrow> {
 }
 
 fn query_all_escrows(deps: Deps) -> StdResult<Vec<Escrow>> {
-    Ok(get_all_escrows(deps.storage)?)
+    let all_escrows = get_all_escrows(deps.storage)?;
+    Ok(all_escrows)
 }
 
 fn query_escrows_by_seller(deps: Deps, seller: Addr) -> StdResult<Vec<Escrow>> {
@@ -39,4 +41,8 @@ fn query_escrows_by_buyer(deps: Deps, buyer: Addr) -> StdResult<Vec<Escrow>> {
 
 fn query_config(deps: Deps) -> StdResult<Config> {
     config().load(deps.storage)
+}
+
+fn query_escrow_count(deps: Deps) -> StdResult<u64> {
+    Ok(get_escrow_count(deps.storage) as u64)
 }

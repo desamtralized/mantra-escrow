@@ -26,4 +26,6 @@ pub enum QueryMsg {
     EscrowsBySeller { seller: Addr },
     #[returns(Vec<Escrow>)]
     EscrowsByBuyer { buyer: Addr },
+    #[returns(u64)]
+    EscrowCount {},
 }

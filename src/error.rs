@@ -7,7 +7,8 @@ use crate::state::EscrowState;
 pub enum ContractError {
     #[error("{0}")]
     Std(#[from] StdError),
-
+    #[error("Invalid config: {msg}")]
+    InvalidConfig { msg: String },
     #[error("Unauthorized")]
     Unauthorized {},
     // Add any other custom errors you like here.
